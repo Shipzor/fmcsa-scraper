@@ -1,22 +1,23 @@
-const express = require('express');
-const chromium = require('chrome-aws-lambda');
-const app = express();
-const PORT = process.env.PORT || 3000;
+const express  = require('express');
+const puppeteer = require('puppeteer');   // ← use plain Puppeteer
+const app      = express();
+const PORT     = process.env.PORT || 3000;
 
+/**
+ * GET /carrier-phone/:dot
+ * Example: /carrier-phone/2785311
+ */
 app.get('/carrier-phone/:dot', async (req, res) => {
   const dot = req.params.dot;
-  const url = `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&original_query_param=NAME&query_string=${dot}&original_query_string=Carrier`;
+
+  // Snapshot URL pattern (works for every USDOT)
+  const url = `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${dot}`;
 
   let browser;
-
   try {
-    const executablePath = await chromium.executablePath;
-
-    browser = await chromium.puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath,
-      headless: chromium.headless,
+    browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true,
     });
 
     const page = await browser.newPage();
@@ -38,10 +39,10 @@ app.get('/carrier-phone/:dot', async (req, res) => {
     }
   } catch (err) {
     if (browser) await browser.close();
-    res.status(500).json({ error: 'Scraper error', details: err.message });
+    res.status(500).json({ error: 'Scraper error', details: err.message, dot });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅  Server running on port ${PORT}`);
 });
