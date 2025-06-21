@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": "10.2.0"          // 👈 use full Puppeteer 10.x
+    "puppeteer": "10.2.0"
   }
 }
+
