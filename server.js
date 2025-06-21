@@ -1,5 +1,5 @@
 const express = require('express');
-const chromium = require('chrome-aws-lambda');
+const chromium = require('chrome-aws-lambda'); // ✅ Correct chromium wrapper for Render
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -9,10 +9,13 @@ app.get('/carrier-phone/:dot', async (req, res) => {
   let browser;
 
   try {
+    // ✅ This is REQUIRED on Render's free instance
+    const executablePath = await chromium.executablePath;
+
     browser = await chromium.puppeteer.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath,  // ✅ THIS IS REQUIRED ON RENDER
       defaultViewport: chromium.defaultViewport,
+      executablePath: executablePath,
       headless: chromium.headless,
     });
 
