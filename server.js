@@ -1,7 +1,6 @@
 const express = require('express');
 const chromium = require('chrome-aws-lambda');
 const app = express();
-
 const PORT = process.env.PORT || 3000;
 
 app.get('/carrier-phone/:dot', async (req, res) => {
@@ -12,9 +11,9 @@ app.get('/carrier-phone/:dot', async (req, res) => {
   try {
     browser = await chromium.puppeteer.launch({
       args: chromium.args,
-      executablePath: await chromium.executablePath, // ✅ THIS IS THE FIX
+      executablePath: await chromium.executablePath,  // ✅ THIS IS REQUIRED ON RENDER
       defaultViewport: chromium.defaultViewport,
-      headless: chromium.headless
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
