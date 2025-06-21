@@ -1,32 +1,33 @@
 const express = require('express');
-const chromium = require('chrome-aws-lambda'); // ✅ Correct chromium wrapper for Render
+const puppeteer = require('puppeteer');       // ← regular Puppeteer
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+/**
+ * GET /carrier-phone/:dot
+ * Returns { dot, phone }  —or—  an error JSON
+ */
 app.get('/carrier-phone/:dot', async (req, res) => {
   const dot = req.params.dot;
   const url = `https://safer.fmcsa.dot.gov/query.asp?query_type=DOT&query_param=${dot}`;
   let browser;
 
   try {
-    // ✅ This is REQUIRED on Render's free instance
-    const executablePath = await chromium.executablePath;
-
-    browser = await chromium.puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: executablePath,
-      headless: chromium.headless,
+    // Launch headless Chromium shipped by Puppeteer.
+    browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true,
     });
 
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded' });
 
+    // Grab the <td> that contains "Phone:"
     const phone = await page.evaluate(() => {
-      const td = Array.from(document.querySelectorAll('td')).find(el =>
-        el.textContent.includes('Phone:')
+      const cell = [...document.querySelectorAll('td')].find(td =>
+        td.textContent.includes('Phone:')
       );
-      return td ? td.textContent.replace('Phone:', '').trim() : null;
+      return cell ? cell.textContent.replace('Phone:', '').trim() : null;
     });
 
     await browser.close();
@@ -38,10 +39,12 @@ app.get('/carrier-phone/:dot', async (req, res) => {
     }
   } catch (err) {
     if (browser) await browser.close();
-    res.status(500).json({ error: 'Scraper error', details: err.message });
+    res
+      .status(500)
+      .json({ error: 'Scraper error', details: err.message, dot });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅  Server running on port ${PORT}`);
 });
